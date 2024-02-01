@@ -22,6 +22,9 @@ COPY . /var/www/html
 # Set the working directory
 WORKDIR /var/www/html
 
+# Copy the environment file
+COPY .env.production .env
+
 # Install composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
@@ -30,3 +33,18 @@ RUN composer install
 
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+
+# Optimize Laravel configuration, clear cache, and run migrations with seeding
+RUN php artisan key:generate
+RUN php artisan cache:clear
+RUN php artisan optimize
+RUN php artisan config:cache
+RUN php artisan view:cache
+RUN php artisan route:cache
+# RUN php artisan migrate --seed --force
+
+# Expose port 80
+EXPOSE 80
+
+# Start Apache
+CMD ["apache2-foreground"]
